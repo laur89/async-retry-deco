@@ -8,8 +8,6 @@ import async_timeout
 
 logger = logging.getLogger(__name__)
 
-__version__ = "0.3.0"
-
 
 propagate = forever = ...
 
@@ -25,7 +23,6 @@ class ConditionError(Exception):
 def unpartial(fn):
     while hasattr(fn, "func"):
         fn = fn.func
-
     return fn
 
 
@@ -38,9 +35,7 @@ def isexception(obj):
 async def callback(attempt, exc, args, kwargs, delay=None, *, loop):
     if delay is None:
         delay = getattr(callback, "delay", 0.5)
-
     await asyncio.sleep(attempt * delay)
-
     return retry
 
 
@@ -61,7 +56,9 @@ def retry(
     def wrapper(fn):
         @wraps(fn)
         async def wrapped(*fn_args, **fn_kwargs):
-            if isinstance(loop, str):
+            if loop is None:
+                _loop = asyncio.get_running_loop()
+            elif isinstance(loop, str):
                 assert cls ^ kwargs, 'choose self.loop or kwargs["loop"]'
 
                 if cls:
@@ -74,8 +71,6 @@ def retry(
                     _loop = getattr(_self, loop)
                 elif kwargs:
                     _loop = fn_kwargs[loop]
-            elif loop is None:
-                _loop = asyncio.get_running_loop()
             else:
                 _loop = loop
 
@@ -88,22 +83,17 @@ def retry(
 
             if cls:
                 assert fn_args
-
                 self, *fn_args = fn_args
-
                 fn_args = tuple(fn_args)
 
             while True:
                 if immutable:
                     _fn_args = copy.deepcopy(fn_args)
-
                     kwargs_loop = isinstance(loop, str) and kwargs
-
                     if kwargs_loop:
                         obj = fn_kwargs.pop(loop)
 
                     _fn_kwargs = copy.deepcopy(fn_kwargs)
-
                     if kwargs_loop:
                         fn_kwargs[loop] = _fn_kwargs[loop] = obj
                 else:
@@ -114,7 +104,6 @@ def retry(
 
                 try:
                     ret = fn(*_fn_args, **_fn_kwargs)
-
                     if timeout is None:
                         if asyncio.iscoroutinefunction(unpartial(fn)):
                             ret = await ret
@@ -126,12 +115,12 @@ def retry(
 
                         # Note no async_timeout shortcuts here
                         # because we must keep a loop passed from the outside.
+                        # TODO: async_timeout.Timeout() ignores loop param w/ py >= 3.11, see https://github.com/hellysmile/async_retrying/pull/20#issuecomment-3274579720
                         async with async_timeout.Timeout(
                             _loop.time() + timeout,
                             loop=_loop,
                         ):
                             ret = await ret
-
                     return ret
 
                 except ConditionError:
@@ -166,7 +155,6 @@ def retry(
                                 ret = await ret
                         else:
                             ret = fallback
-
                         return ret
 
                     logger.debug(
@@ -185,19 +173,16 @@ def retry(
                     )
 
                     attempt += 1
-
                     if asyncio.iscoroutinefunction(unpartial(callback)):
                         ret = await ret
 
                     if ret is not retry:
                         return ret
-
         return wrapped
 
     if fn is None:
         return wrapper
-
-    if callable(fn):
+    elif callable(fn):
         return wrapper(fn)
 
     raise NotImplementedError

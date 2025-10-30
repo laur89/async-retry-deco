@@ -49,3 +49,9 @@ Usage
 
 
 Python 3.5+ is required
+
+See also
+--------
+
+https://gitlab.com/ramil.minnigaliev/the-retry - supports both async & non
+

@@ -1,26 +1,19 @@
-import re
-from pathlib import Path
-
 from setuptools import setup
+from os.path import exists
 
-home = Path(__file__).parent
-readme = home / "README.rst"
-
-
-def get_version():
-    regex = re.compile(r'__version__ = "(?P<version>.+)"', re.M)
-    match = regex.search((home / "async_retrying.py").read_text())
-    return match.group("version")
+readme_f = 'README.rst'
+__description__ = 'Retry Decorator for asyncio'
 
 
 setup(
-    name="async_retrying",
-    version=get_version(),
-    author="OCEAN S.A.",
-    author_email="osf@ocean.io",
-    url="https://github.com/wikibusiness/async_retrying",
-    description="Simple retrying for asyncio",
-    long_description=readme.read_text(),
+    name="async-retry-deco",
+    # version=get_version(),
+    version='0.0.1.dev0',  # managed by zest.releaser!
+    author="Laur",
+    url="https://github.com/laur89/async-retry-deco",
+    description=__description__,
+    license='MIT',
+    long_description=open(readme_f).read() if exists(readme_f) else __description__,
     install_requires=[
         "async_timeout",
     ],
@@ -43,5 +36,5 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
-    keywords=["asyncio", "retrying"],
+    keywords=["asyncio", "retry", "retrying", "decorator", "deco"],
 )
